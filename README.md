@@ -6,6 +6,6 @@ There's three categories of dps: power, semi-burst and condi. Power is any norma
 
 The file format is `.csv`, since I'm lazy to support other formats.
 
-For DPS that is in `dps/` directory, the format is `Time,DPS`.
+For DPS that is in `dps/` directory, the format is `Time,DPS`. You must fill in all 3 types of dps to get the result.
 
 For encounters that is in `data/` directory, the format is `Phase,HP,Coeff,PCoeff,DPSCount`. Phase is the index of phase, start from 1; HP is the total health of the phase; Coeff is the mechanic coefficient of the boss; PCoeff is the coefficient only applied on power builds, which is the lower toughness; DPSCount is the ratio of squad dps to personal dps.
