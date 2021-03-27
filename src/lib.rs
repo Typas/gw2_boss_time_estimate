@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use csv::Reader;
 
 pub struct BossPhase {
-    pub index: usize,
+    index: String,
     health: f64,
     coeff: f64,
     power_coeff: f64,
@@ -45,7 +45,7 @@ lazy_static! {
 }
 
 impl BossPhase {
-    pub fn init(index: usize, health: f64, coeff: f64, power: f64, num: f64) -> BossPhase {
+    pub fn init(index: String, health: f64, coeff: f64, power: f64, num: f64) -> BossPhase {
         BossPhase {
             index,
             health,
@@ -65,6 +65,10 @@ impl BossPhase {
 
     pub fn condi_time(&self) -> f64 {
         self.get_time(self.health / self.coeff, &CONDI)
+    }
+
+    pub fn phase(&self) -> &str {
+        &self.index
     }
 
     fn get_time(&self, health: f64, pdps: &PersonalDps) -> f64 {

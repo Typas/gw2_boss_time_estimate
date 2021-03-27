@@ -29,7 +29,7 @@ fn main() {
             phases.iter().for_each(|p| {
                 println!(
                     "{:<6}{:>8.2}{:>8.2}{:>8.2}",
-                    p.index,
+                    p.phase(),
                     p.power_time(),
                     p.semi_time(),
                     p.condi_time()
@@ -52,13 +52,12 @@ fn read_boss(filename: &str) -> Result<Vec<BossPhase>, Box<dyn Error>> {
     let mut phases: Vec<BossPhase> = Vec::new();
     for result in reader.records() {
         let record = result?;
-        let i: usize = record[0].parse()?;
         let hp: f64 = record[1].parse()?;
         let c: f64 = record[2].parse()?;
         let pc: f64 = record[3].parse()?;
         let n: f64 = record[4].parse()?;
 
-        phases.push(BossPhase::init(i, hp, c, pc, n));
+        phases.push(BossPhase::init(record[0].to_string(), hp, c, pc, n));
     }
 
     Ok(phases)
