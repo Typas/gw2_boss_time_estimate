@@ -1,5 +1,5 @@
-use lazy_static::lazy_static;
 use csv::Reader;
+use lazy_static::lazy_static;
 
 pub struct BossPhase {
     index: String,
@@ -33,9 +33,7 @@ fn get_dps(dps_type: &str) -> PersonalDps {
 
         frames.push(Dps(t, d));
     }
-    PersonalDps {
-        dps: frames
-    }
+    PersonalDps { dps: frames }
 }
 
 lazy_static! {
@@ -78,20 +76,19 @@ impl BossPhase {
 
         if i_upper == 0 {
             // assuming a = 0, use longest dps
-            health / sdps.dps.last().unwrap().1
+            health / sdps.last().unwrap().1
         } else if i_lower == sdps.dps.len() {
             // assuming a = 0, use shortest dps
-            health / sdps.dps.first().unwrap().1
+            health / sdps.first().unwrap().1
         } else {
-            let a = sdps.dps[i_upper].acc(&sdps.dps[i_lower]);
+            let a = sdps[i_upper].acc(&sdps[i_lower]);
 
             // assuming a = const, use interpolation
             // normal situation: [-b+sqrt(b^2-4ac)]/2a
 
-            sdps.dps[i_lower].0 as f64
-                + (sdps.dps[i_lower].1.powi(2)
-                    + 2.0 * a * (health - sdps.dps[i_lower].total_damage())
-                    - sdps.dps[i_lower].1)
+            sdps[i_lower].time() as f64
+                + (sdps[i_lower].dps().powi(2) + 2.0 * a * (health - sdps[i_lower].total_damage())
+                    - sdps[i_lower].dps())
                     .sqrt()
                     / a
         }
@@ -100,15 +97,19 @@ impl BossPhase {
 
 impl PersonalDps {
     fn to_squad_dps(&self, k: f64) -> SquadDps {
-        let d: Vec<Dps> = self.dps.iter().clone().map(|d| Dps(d.0, d.1 * k)).collect();
+        let d: Vec<Dps> = self
+            .iter()
+            .clone()
+            .map(|d| Dps(d.time(), d.dps() * k))
+            .collect();
         SquadDps(PersonalDps { dps: d })
     }
 }
 
 impl SquadDps {
     fn index_upper(&self, health: f64) -> usize {
-        for i in self.dps.len()-1..=0 {
-            if self.dps[i].total_damage() < health {
+        for i in self.len() - 1..=0 {
+            if self[i].total_damage() < health {
                 return i + 1;
             }
         }
@@ -117,25 +118,41 @@ impl SquadDps {
     }
 
     fn index_lower(&self, health: f64) -> usize {
-        for i in 0..self.dps.len() {
-            if self.dps[i].total_damage() > health {
+        for i in 0..self.len() {
+            if self[i].total_damage() > health {
                 return i - 1;
             }
         }
 
-        self.dps.len() // health too large
+        self.len() // health too large
     }
 }
 
 impl std::ops::Deref for SquadDps {
     type Target = PersonalDps;
 
-    fn deref(&self) -> &PersonalDps {
+    fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
 
+impl std::ops::Deref for PersonalDps {
+    type Target = Vec<Dps>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.dps
+    }
+}
+
 impl Dps {
+    fn time(&self) -> f64 {
+        self.0
+    }
+
+    fn dps(&self) -> f64 {
+        self.1
+    }
+
     fn total_damage(&self) -> f64 {
         (self.0 as f64) * self.1
     }
