@@ -34,7 +34,7 @@ fn main() {
                 .map(|p| (p.phase(), p.power_time(), p.semi_time(), p.condi_time()))
                 .collect();
             arr.iter()
-                .for_each(|a| println!("{:<6}{:>8.2}{:>8.2}{:>8.2}", a.0, a.1, a.2, a.3,));
+                .for_each(|a| println!("{:<10}{:>10.2}{:>10.2}{:>10.2}", a.0, a.1, a.2, a.3,));
             let sums: (f64, f64, f64) = arr
                 .iter()
                 .map(|(_, a, b, c)| (a, b, c))
