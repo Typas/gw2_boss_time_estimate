@@ -71,26 +71,27 @@ impl BossPhase {
 
     fn get_time(&self, health: f64, pdps: &PersonalDps) -> f64 {
         let sdps = pdps.to_squad_dps(self.num_dps);
-        let i_lower = sdps.index_lower(health);
-        let i_upper = sdps.index_upper(health);
+        let lower = sdps.find_lower(health);
+        let upper = sdps.find_upper(health);
 
-        if i_upper == 0 {
-            // assuming a = 0, use longest dps
-            health / sdps.last().unwrap().1
-        } else if i_lower == sdps.dps.len() {
-            // assuming a = 0, use shortest dps
-            health / sdps.first().unwrap().1
-        } else {
-            let a = sdps[i_upper].acc(&sdps[i_lower]);
+        match (lower, upper) {
+            // lower than lowest, assume a=0
+            (None, Some(upper)) => health / upper.dps(),
+            // higher than highest, assume a=0
+            (Some(lower), None) => health / lower.dps(),
+            // normal situation, assume a=const
+            (Some(lower), Some(upper)) => {
+                let a = upper.acc(lower);
 
-            // assuming a = const, use interpolation
-            // normal situation: [-b+sqrt(b^2-4ac)]/2a
+                lower.time()
+                    + ((lower.dps().powi(2) + 2.0 * a * (health - lower.total_damage())).sqrt()
+                        - lower.dps())
+                        / a
+            }
 
-            sdps[i_lower].time() as f64
-                + (sdps[i_lower].dps().powi(2) + 2.0 * a * (health - sdps[i_lower].total_damage())
-                    - sdps[i_lower].dps())
-                    .sqrt()
-                    / a
+            (None, None) => {
+                panic!("one of the dps log is not sorted with time, try to check it");
+            }
         }
     }
 }
@@ -107,24 +108,23 @@ impl PersonalDps {
 }
 
 impl SquadDps {
-    fn index_upper(&self, health: f64) -> usize {
-        for i in self.len() - 1..=0 {
-            if self[i].total_damage() < health {
-                return i + 1;
+    fn find_upper(&self, health: f64) -> Option<&Dps> {
+        for it in self.iter() {
+            if it.total_damage() > health {
+                return Some(it);
             }
         }
 
-        0 // health too small
+        None
     }
 
-    fn index_lower(&self, health: f64) -> usize {
-        for i in 0..self.len() {
-            if self[i].total_damage() > health {
-                return i - 1;
+    fn find_lower(&self, health: f64) -> Option<&Dps> {
+        for it in self.iter().rev() {
+            if it.total_damage() < health {
+                return Some(it);
             }
         }
-
-        self.len() // health too large
+        None
     }
 }
 
@@ -154,10 +154,10 @@ impl Dps {
     }
 
     fn total_damage(&self) -> f64 {
-        (self.0 as f64) * self.1
+        self.time() * self.dps()
     }
 
     fn acc(&self, lower: &Self) -> f64 {
-        (self.1 - lower.1) / (self.0 - lower.0) as f64
+        (self.dps() - lower.dps()) / (self.time() - lower.time())
     }
 }

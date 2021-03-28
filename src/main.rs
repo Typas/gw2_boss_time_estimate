@@ -1,6 +1,6 @@
+use boss_time_estimate::BossPhase;
 use csv::Reader;
 use rayon::prelude::*;
-use boss_time_estimate::BossPhase;
 use std::env;
 use std::error::Error;
 use std::string::String;
@@ -11,11 +11,11 @@ fn main() {
         0 => {
             println!("How can you do this?");
             return;
-        },
+        }
         1 => {
             println!("Usage: cargo run <boss>");
             return;
-        },
+        }
         _ => (),
     }
     let dir_path = "data/";
@@ -25,25 +25,28 @@ fn main() {
     let boss = read_boss(&file_path);
     match boss {
         Ok(phases) => {
-            println!("{:<6}{:>8}{:>8}{:>8}", "Phase", "Power", "Semi", "Condi");
-            phases.iter().for_each(|p| {
-                println!(
-                    "{:<6}{:>8.2}{:>8.2}{:>8.2}",
-                    p.phase(),
-                    p.power_time(),
-                    p.semi_time(),
-                    p.condi_time()
-                )
-            });
             println!(
-                "{:<6}{:>8.2}{:>8.2}{:>8.2}",
-                "Total",
-                phases.par_iter().map(|p| p.power_time()).sum::<f64>(),
-                phases.par_iter().map(|p| p.semi_time()).sum::<f64>(),
-                phases.par_iter().map(|p| p.condi_time()).sum::<f64>()
+                "{:<10}{:>10}{:>10}{:>10}",
+                "Phase", "Power", "Semi", "Condi"
+            );
+            let arr: Vec<_> = phases
+                .par_iter()
+                .map(|p| (p.phase(), p.power_time(), p.semi_time(), p.condi_time()))
+                .collect();
+            arr.iter()
+                .for_each(|a| println!("{:<6}{:>8.2}{:>8.2}{:>8.2}", a.0, a.1, a.2, a.3,));
+            let sums: (f64, f64, f64) = arr
+                .iter()
+                .map(|(_, a, b, c)| (a, b, c))
+                .fold((0.0, 0.0, 0.0), |acc, x| {
+                    (acc.0 + x.0, acc.1 + x.1, acc.2 + x.2)
+                });
+            println!(
+                "{:<10}{:>10.2}{:>10.2}{:>10.2}",
+                "Total", sums.0, sums.1, sums.2,
             );
         }
-        Err(e) => println!("Error: {}", e),
+        Err(e) => eprintln!("Error: {}", e),
     };
 }
 
